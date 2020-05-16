@@ -1,0 +1,44 @@
+{
+  "name": "dd-arena-gameserver",
+  "version": "0.0.0",
+  "description": "Game Server for Dungeons and Dwarves: Arena.",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "uuid": "^7.0.3"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.11",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.12.37",
+    "@types/uuid": "^7.0.2",
+    "chai": "^4.2.0",
+    "mocha": "^6.2.3",
+    "nyc": "^14.1.1",
+    "ts-node": "^8.9.0",
+    "typescript": "^3.8.3"
+  },
+  "scripts": {
+    "test": "mocha -r ts-node/register tests/**/*.test.ts",
+    "coverage": "nyc -r text -e .ts -x \"tests/*.test.ts\" npm run test",
+    "start": "node ./build/src/index.js",
+    "build": "node ./node_modules/typescript/bin/tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MysteryPoo/DD-Arena-GameServer.git"
+  },
+  "keywords": [
+    "dragonring",
+    "dungeons",
+	"dwarves",
+	"arena",
+    "server"
+  ],
+  "author": "Matthew Thornton",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MysteryPoo/DD-Arena-GameServer/issues"
+  },
+  "homepage": "https://github.com/MysteryPoo/DD-Arena-GameServer#readme"
+}
