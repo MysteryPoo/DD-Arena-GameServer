@@ -10,14 +10,16 @@ export class HandshakeHandler extends MessageHandlerBase {
         let message : Handshake = new Handshake(this.messageId, buffer);
 
         if (message.valid) {
-            // TODO : Do this ...
+            let gameServer : GameServer = myClient.connectionManager as GameServer;
+            let indexOnServer : number = gameServer.createPlayer(myClient);
             let response : Handshake = new Handshake(this.messageId);
             response.error = 0;
-            response.playerIndexOnServer = 0;
+            response.playerIndexOnServer = indexOnServer;
 
+            myClient.authenticated = true;
             myClient.write(response.serialize());
 
-            (myClient.connectionManager as GameServer).startGame();
+            gameServer.startGame();
             return true;
         } else {
             return false;

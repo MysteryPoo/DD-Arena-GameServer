@@ -8,27 +8,16 @@ import { IConnectionManager } from "./Interfaces/IConnectionManager";
 import { LobbyConnectionManager } from "./LobbyConnectionManager";
 import { Challenge } from "./Protocol/GameServerInterface/Messages/Challenge";
 import { HandshakeHandler } from "./Protocol/GameServerInterface/Handlers/Handshake";
+import { PingHandler } from "./Protocol/GameServerInterface/Handlers/Ping";
+import { ControllerHandler } from "./Protocol/GameServerInterface/Handlers/Controller";
 
 export enum MESSAGE_ID {
     FIRST,
     CHALLENGE = FIRST,
 	HANDSHAKE,
 	PING,
-	PLAYERDATA,
-	ROLLDICE,
-	ROLLEVENTDICE,
-	CHANGEDIE,
-	NEXTTURN,
-	TAKEACTION,
-	PENDINGCARD,
-	USECARD,
-	DIEGRABBER,
-	DIEGRABBERRELEASE,
-	BRAWLTARGET,
-	BRAWLINFO,
-	DESTROYFLEET,
-	STEALFLEET,
-	ENTERORBIT,
+    PLAYERDATA,
+    CONTROLLER,
 	GAMEOVER,
 	SETVOIP,
 	VOIPDATA,
@@ -36,26 +25,37 @@ export enum MESSAGE_ID {
     LAST = INVALID
 };
 
-export enum CARD {
-    FIRST,
-	NONE = FIRST,
-	IGNOREFARKLE,		// Overtime
-	REROLLDIE,			// Captured Asteroid
-	FORCEDIEVALUE,		// Captured Comet
-	IGNOREBLACKHOLE,		// Anti-mass stabilizer
-	DESTROYENEMYFLEET,	// Saboteur
-	TURNENEMYFLEET,		// Political Uproar
-	DOUBLEROLLSCORE,
-    STEALTH,				// Hide in a nebula
-    INVALID_CARD,
-	LASTINDEX = INVALID_CARD
-};
+export class ClientController {
+    public isLeft : boolean = false;
+    public isRight : boolean = false;
+    public isUp : boolean = false;
+    public isDown : boolean = false;
+    public isPrimaryAction : boolean = false;
+    public isSecondaryAction : boolean = false;
+    public pointerX : number = 0;
+    public pointerY : number = 0;
+
+    constructor(private client : IClient) {}
+
+    public setClient(client : IClient) : void {
+        this.client = client;
+    }
+
+    public isMe(client : IClient) : boolean {
+        return client === this.client;
+    }
+}
 
 export class GameServer extends ServerBase implements IServer, IConnectionManager {
+
+    public playerList : ClientController[] = [];
+    private isGameRunning : boolean = false;
 
     constructor(private lobbyConnMgr : LobbyConnectionManager) {
         super();
         this.registerHandler<HandshakeHandler>(MESSAGE_ID.HANDSHAKE, HandshakeHandler);
+        this.registerHandler<PingHandler>(MESSAGE_ID.PING, PingHandler);
+        this.registerHandler<ControllerHandler>(MESSAGE_ID.CONTROLLER, ControllerHandler);
 
         this.on('connection', this.onConnection);
         this.on('close', () => {
@@ -67,12 +67,17 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         });
     }
 
-    startGame() : void {
-        this.lobbyConnMgr.reportGame();
+    getAllSockets() : Map<string, IClient> {
+        return this.socketMap;
+    }
 
-        this.socketMap.forEach( (client : IClient) => {
-            this.removeClient(client);
-        });
+    createPlayer(client : IClient) : number {
+        this.playerList.push(new ClientController(client));
+        return this.playerList.length - 1;
+    }
+
+    startGame() : void {
+        this.isGameRunning = true;
     }
 
     handleDisconnect(client: IClient): void {
@@ -106,16 +111,18 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         return new Promise<boolean>( (resolve, reject) => {
             this.port = port;
             this.listen( {port: port, host: "0.0.0.0"}, () => {
-                setTimeout( () => {
-                    this.getConnections( (err, count : number) => {
-                        if (count === 0) {
-                            console.debug("Shutting down... No one has connected before the timeout.");
-                            this.close();
-                            this.unref();
-                            this.lobbyConnMgr.destroy();
-                        }
-                    });
-                }, 5000);
+                if (process.env.NOMATCHMAKING === "0") {
+                    setTimeout( () => {
+                        this.getConnections( (err, count : number) => {
+                            if (count === 0) {
+                                console.debug("Shutting down... No one has connected before the timeout.");
+                                this.close();
+                                this.unref();
+                                this.lobbyConnMgr.destroy();
+                            }
+                        });
+                    }, 5000);
+                }
                 resolve(true);
             });
         });

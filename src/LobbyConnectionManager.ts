@@ -20,7 +20,7 @@ export enum MESSAGE_ID {
 export class LobbyConnectionManager implements IConnectionManager {
 
     public handlerList : IMessageHandler[] = [];
-    private lobbyInterface! : LobbyClient;
+    private lobbyInterface : LobbyClient | undefined;
 
     constructor() {
         this.reconnect();
@@ -28,14 +28,16 @@ export class LobbyConnectionManager implements IConnectionManager {
 
     // TODO : Implement correctly
     reportGame(/* GameState */) : void {
-        console.debug("Reporting game.");
-        let report : BattleReport = new BattleReport(MESSAGE_ID.BattleReport);
-        report.winnerId = this.lobbyInterface.hostId;
-        report.playerList = [{id : this.lobbyInterface.hostId, score : 100, trophyList : [
-            1,4,10,0,0,2,0,0,0,0,1,4,10,0,0,2,0,0,0,0
-        ]}];
+        if (this.lobbyInterface) {
+            console.debug("Reporting game.");
+            let report : BattleReport = new BattleReport(MESSAGE_ID.BattleReport);
+            report.winnerId = this.lobbyInterface.hostId;
+            report.playerList = [{id : this.lobbyInterface.hostId, score : 100, trophyList : [
+                1,4,10,0,0,2,0,0,0,0,1,4,10,0,0,2,0,0,0,0
+            ]}];
 
-        this.lobbyInterface.write(report.serialize());
+            this.lobbyInterface.write(report.serialize());
+        }
     }
 
     destroy() : void {
@@ -52,11 +54,13 @@ export class LobbyConnectionManager implements IConnectionManager {
     }
 
     private reconnect() : void {
-        if (this.lobbyInterface) {
-            console.debug(this.lobbyInterface.lastConnectionError);
-            this.lobbyInterface.destroy();
+        if (process.env.NOMATCHMAKING === "0") {
+            if (this.lobbyInterface) {
+                console.debug(this.lobbyInterface.lastConnectionError);
+                this.lobbyInterface.destroy();
+            }
+            this.lobbyInterface = new LobbyClient(new Socket(), [], this, process.env.PASSWORD!, process.env.HOST!, {port : Number(process.env.AUTHPORT!), host : process.env.AUTHIP});
         }
-        this.lobbyInterface = new LobbyClient(new Socket(), [], this, process.env.PASSWORD!, process.env.HOST!, {port : Number(process.env.AUTHPORT!), host : process.env.AUTHIP});
     }
 
     getLobby() : LobbyClient | undefined {
