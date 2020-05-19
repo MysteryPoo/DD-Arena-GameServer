@@ -32,7 +32,7 @@ export abstract class ClientBase implements IClient {
 
         this.socket.on('data', (data : Buffer) => {
             let tell : number = 0;
-            while(tell < data.byteLength) {
+            while(tell < data.byteLength - 5) {
                 let rawIdentifier : number = data.readUInt8(tell);
                 let messageSize : number = data.readUInt32LE(tell + 1);
                 let messageData : Buffer = data.slice(tell + 5, tell + messageSize);

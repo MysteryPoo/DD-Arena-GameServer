@@ -27,7 +27,9 @@ export class ControllerHandler extends MessageHandlerBase {
 
                     // Update everyone of the changes
                     for (let [uid, client] of gameServer.getAllSockets()) {
-                        client.write(message.serialize());
+                        if(!client.write(message.serialize())) {
+                            console.debug("Failed to send message.");
+                        }
                     }
                 }
             }
