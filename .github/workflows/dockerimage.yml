@@ -1,0 +1,20 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the Docker image
+      env:
+        REPO: ${{ secrets.DOCKER_HUB_REPO }}
+      run: docker build . --file Dockerfile --tag $REPO/ddags:$(date +%s)
