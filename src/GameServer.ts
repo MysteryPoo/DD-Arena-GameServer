@@ -10,6 +10,7 @@ import { Challenge } from "./Protocol/GameServerInterface/Messages/Challenge";
 import { HandshakeHandler } from "./Protocol/GameServerInterface/Handlers/Handshake";
 import { PingHandler } from "./Protocol/GameServerInterface/Handlers/Ping";
 import { ControllerHandler } from "./Protocol/GameServerInterface/Handlers/Controller";
+import { SyncPositionHandler } from "./Protocol/GameServerInterface/Handlers/SyncPosition";
 
 export enum MESSAGE_ID {
     FIRST,
@@ -18,6 +19,7 @@ export enum MESSAGE_ID {
 	PING,
     PLAYERDATA,
     CONTROLLER,
+    SYNCPOSITION,
 	GAMEOVER,
 	SETVOIP,
 	VOIPDATA,
@@ -56,6 +58,7 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         this.registerHandler<HandshakeHandler>(MESSAGE_ID.HANDSHAKE, HandshakeHandler);
         this.registerHandler<PingHandler>(MESSAGE_ID.PING, PingHandler);
         this.registerHandler<ControllerHandler>(MESSAGE_ID.CONTROLLER, ControllerHandler);
+        this.registerHandler<SyncPositionHandler>(MESSAGE_ID.SYNCPOSITION, SyncPositionHandler);
 
         this.on('connection', this.onConnection);
         this.on('close', () => {
