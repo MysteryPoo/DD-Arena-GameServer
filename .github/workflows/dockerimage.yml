@@ -22,7 +22,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: docker.pkg.github.com
-          repository: MysteryPoo/DD-Arena-GameServer/ddags
+          repository: mysterypoo/dd-arena-gameserver/ddags
           tag_with_ref: true
   build_x86_and_push:
     name: Push x86 Docker image to multiple registries
@@ -43,5 +43,5 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: docker.pkg.github.com
-          repository: MysteryPoo/DD-Arena-GameServer/ddags
+          repository: mysterypoo/dd-arena-gameserver/ddags
           tag_with_ref: true
