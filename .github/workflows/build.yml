@@ -34,7 +34,7 @@ jobs:
           echo ::set-output name=build_date::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo ::set-output name=docker_platforms::linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/386,linux/ppc64le,linux/s390x
           echo ::set-output name=docker_username::${{ secrets.DOCKER_USERNAME}}
-          echo ::set-output name=docker_image::${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_HUB_REPO }}
+          echo ::set-output name=docker_image::${{ secrets.DOCKER_USERNAME }}/ddags
       -
         # https://github.com/crazy-max/ghaction-docker-buildx
         name: Set up Docker Buildx
