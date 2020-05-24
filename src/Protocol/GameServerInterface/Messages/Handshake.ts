@@ -5,20 +5,18 @@ import { BufferHelper } from "../../../BufferHelper";
 export class Handshake extends MessageBase {
 
     error! : number;
-    playerIndexOnServer! : number;
 
     protocolVersion! : number;
     token! : number;
 
 
     serialize(): Buffer {
-        let bufferSize : number = 4;
+        let bufferSize : number = 3;
         let helper : BufferHelper = new BufferHelper(Buffer.allocUnsafe(bufferSize));
 
         helper.writeUInt8(this.messageId);
         helper.writeUInt8(bufferSize);
         helper.writeUInt8(this.error);
-        helper.writeUInt8(this.playerIndexOnServer);
 
         return helper.buffer;
     }

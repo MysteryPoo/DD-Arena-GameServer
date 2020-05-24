@@ -4,7 +4,7 @@ import { BufferHelper } from "../../../BufferHelper";
 
 export class Controller extends MessageBase {
 
-    public index! : number;
+    public key! : number;
     public isLeft! : boolean;
     public isRight! : boolean;
     public isUp! : boolean;
@@ -21,7 +21,7 @@ export class Controller extends MessageBase {
         helper.writeUInt8(this.messageId);
         helper.writeUInt8(bufferSize);
 
-        helper.writeUInt8(this.index);
+        helper.writeUInt8(this.key);
         
         let buttonFlags : number = 0;
         buttonFlags |= this.isLeft ? 0b10000000 : 0;
@@ -42,8 +42,9 @@ export class Controller extends MessageBase {
         try {
             let helper : BufferHelper = new BufferHelper(buffer);
 
-            this.validate(buffer, 5);
+            this.validate(buffer, 6);
 
+            this.key = helper.readUInt8();
             let buttonFlags : number = helper.readUInt8();
             this.isLeft = buttonFlags & 0b10000000 ? true : false;
             this.isRight = buttonFlags & 0b01000000 ? true : false;

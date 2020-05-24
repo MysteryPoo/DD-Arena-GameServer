@@ -4,18 +4,18 @@ import { BufferHelper } from "../../../BufferHelper";
 
 export class SyncPosition extends MessageBase {
 
-    public objectID! : number;
+    public key! : number;
     public x! : number;
     public y! : number;
 
     serialize(): Buffer {
-        let bufferSize : number = 10;
+        let bufferSize : number = 7;
         let helper : BufferHelper = new BufferHelper(Buffer.allocUnsafe(bufferSize));
 
         helper.writeUInt8(this.messageId);
         helper.writeUInt8(bufferSize);
 
-        helper.writeUInt32LE(this.objectID);
+        helper.writeUInt8(this.key);
         helper.writeUInt16LE(this.x);
         helper.writeUInt16LE(this.y);
 
@@ -26,9 +26,9 @@ export class SyncPosition extends MessageBase {
         try {
             let helper : BufferHelper = new BufferHelper(buffer);
 
-            this.validate(buffer, 8);
+            this.validate(buffer, 5);
 
-            this.objectID = helper.readUInt32LE();
+            this.key = helper.readUInt8();
             this.x = helper.readUInt16LE();
             this.y = helper.readUInt16LE();
 

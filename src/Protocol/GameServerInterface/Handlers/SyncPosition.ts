@@ -12,8 +12,10 @@ export class SyncPositionHandler extends MessageHandlerBase {
         if (message.valid && myClient.authenticated) {
             let gameServer : GameServer = myClient.connectionManager as GameServer;
 
-            for (let [id, client] of gameServer.getAllSockets()) {
-                client.write(message.serialize());
+            if (gameServer.getHost() === myClient.uid) {
+                for (let [id, client] of gameServer.getAllSockets()) {
+                    client.write(message.serialize());
+                }
             }
             return true;
         } else {

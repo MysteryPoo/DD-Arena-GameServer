@@ -11,6 +11,7 @@ import { HandshakeHandler } from "./Protocol/GameServerInterface/Handlers/Handsh
 import { PingHandler } from "./Protocol/GameServerInterface/Handlers/Ping";
 import { ControllerHandler } from "./Protocol/GameServerInterface/Handlers/Controller";
 import { SyncPositionHandler } from "./Protocol/GameServerInterface/Handlers/SyncPosition";
+import { PlayerData } from "./Protocol/GameServerInterface/Messages/PlayerData";
 
 export enum MESSAGE_ID {
     FIRST,
@@ -18,7 +19,7 @@ export enum MESSAGE_ID {
 	HANDSHAKE,
 	PING,
     PLAYERDATA,
-    CONTROLLER,
+    CONTROLLERDATA,
     SYNCPOSITION,
 	GAMEOVER,
 	SETVOIP,
@@ -37,27 +38,45 @@ export class ClientController {
     public pointerX : number = 0;
     public pointerY : number = 0;
 
-    constructor(private client : IClient) {}
+    private controlledBy : clientUID = "";
 
     public setClient(client : IClient) : void {
-        this.client = client;
+        this.controlledBy = client.uid;
     }
 
     public isMe(client : IClient) : boolean {
-        return client === this.client;
+        return client.uid === this.controlledBy;
     }
+}
+
+export class MetaProperties {
+    constructor(public name : string, public token : number) {}
+}
+
+type clientUID = string;
+
+export class Player {
+
+    public ownedBy : clientUID | undefined;
+    public isAI : boolean = false;
+
+    constructor(public metaProperties : MetaProperties, public controllerKey : number) {}
 }
 
 export class GameServer extends ServerBase implements IServer, IConnectionManager {
 
-    public playerList : ClientController[] = [];
+    public playerMap : Map<number, Player> = new Map();
+    public controllerMap : Map<number, ClientController> = new Map();
+    private nextControllerId : number = 0;
+    private nextPlayerId : number = 0;
+    private hostId : clientUID = "";
     private isGameRunning : boolean = false;
 
     constructor(private lobbyConnMgr : LobbyConnectionManager) {
         super();
         this.registerHandler<HandshakeHandler>(MESSAGE_ID.HANDSHAKE, HandshakeHandler);
         this.registerHandler<PingHandler>(MESSAGE_ID.PING, PingHandler);
-        this.registerHandler<ControllerHandler>(MESSAGE_ID.CONTROLLER, ControllerHandler);
+        this.registerHandler<ControllerHandler>(MESSAGE_ID.CONTROLLERDATA, ControllerHandler);
         this.registerHandler<SyncPositionHandler>(MESSAGE_ID.SYNCPOSITION, SyncPositionHandler);
 
         this.on('connection', this.onConnection);
@@ -68,22 +87,65 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         this.on('listening', () => {
             console.log("Listening on port: " + this.port);
         });
+
+        // Independent Server Mode
+        if (process.env.NOMATCHMAKING) {
+            for (let p = 0; p < 4; ++p) {
+                this.playerMap.set(p, new Player(new MetaProperties(`Player${p + 1}`, 1000 + p), this.newController()));
+            }
+        }
+    }
+
+    private newController() : number {
+        let controller : ClientController = new ClientController();
+        let controllerKey : number = this.nextControllerId++;
+        this.controllerMap.set(controllerKey, controller);
+
+        return controllerKey;
     }
 
     getAllSockets() : Map<string, IClient> {
         return this.socketMap;
     }
 
-    createPlayer(client : IClient) : number {
-        this.playerList.push(new ClientController(client));
-        return this.playerList.length - 1;
+    getHost() : string {
+        if (this.hostId === "") this.findNewHost();
+        return this.hostId;
+    }
+
+    getControllerOfPlayer(player : Player) : ClientController | undefined {
+        return this.controllerMap.get(player.controllerKey);
     }
 
     startGame() : void {
         this.isGameRunning = true;
+        
+        for (let [key, player] of this.playerMap) {
+            for (let client of this.socketMap.values()) {
+                let message : PlayerData = new PlayerData(MESSAGE_ID.PLAYERDATA);
+                message.playerKey = key;
+                message.controllerKey = player.controllerKey;
+                message.isAI = player.isAI;
+                message.name = player.metaProperties.name;
+                message.ownerId = player.ownedBy ? player.ownedBy : "none";
+                message.isMine = player.ownedBy ? (player.ownedBy === client.uid ? true : false) : false;
+                client.write(message.serialize());
+            }
+        }
     }
 
     handleDisconnect(client: IClient): void {
+        console.debug(`client ${client.uid} has disconnected`);
+        console.debug(`hostId: ${this.hostId}`);
+        if (this.hostId === client.uid) {
+            console.debug(`Host ${client.uid} left... Migrating host...`);
+            this.hostId = this.findNewHost();
+            // let newHost : IClient | undefined = this.socketMap.get(this.hostId);
+            // if( newHost ) {
+            //     newHost.write
+            // }
+        }
+
         this.removeClient(client);
 
         if (this.socketMap.size === 0) {
@@ -92,6 +154,19 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
             this.close();
             this.unref();
         }
+    }
+
+    private findNewHost() : string {
+        let newHostId : string = "";
+        for (let client of this.socketMap.values()) {
+            if (client.uid !== this.hostId) {
+                this.hostId = client.uid;
+                newHostId = client.uid;
+                console.debug(`New host id: ${newHostId}`);
+                break;
+            }
+        }
+        return newHostId;
     }
 
     removeClient(client: IClient): void {
