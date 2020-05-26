@@ -24,4 +24,5 @@ The Game Server listens on port 9000 by default or the PORT enviornment variable
 | AUTHIP | IP Address of the Matchmaking Server | An IP or hostname |
 | AUTHPORT | Port of the Matchmaking Server | A number 1-65535 |
 | PASSWORD | Secret string to authorize on the Matchmaking Server | A String |
+| PLAYERCOUNT | Number of players for this session | A number |
 | NOMATCHMAKING | If matchmaking is enabled, the server will shutdown if no one is connected. | 0 or 1 |

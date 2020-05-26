@@ -69,7 +69,11 @@ export abstract class ClientBase implements IClient {
     abstract GetMessageTypeString(identifier : number) : string;
 
     public write(buffer : Buffer) : boolean {
-        this.isConnected = this.socket.write(buffer);
+        try {
+            this.isConnected = this.socket.write(buffer);
+        } catch (e) {
+            this.isConnected = false;
+        }
         return this.isConnected;
     }
 

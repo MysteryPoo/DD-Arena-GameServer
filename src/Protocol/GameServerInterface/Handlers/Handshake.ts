@@ -3,6 +3,7 @@ import { MessageHandlerBase } from "../../../Abstracts/MessageHandlerBase";
 import { Handshake } from "../Messages/Handshake";
 import { IClient } from "../../../Interfaces/IClient";
 import { GameServer, ClientController } from "../../../GameServer";
+import { GameStateWaiting } from "../../../GameState";
 
 export class HandshakeHandler extends MessageHandlerBase {
 
@@ -37,8 +38,9 @@ export class HandshakeHandler extends MessageHandlerBase {
                 }
             }
 
-            // TODO : Do this when all players are connected unless NOMATCHMAKING
-            gameServer.startGame();
+            // Restart the waiting state
+            gameServer.gameState = new GameStateWaiting(gameServer);
+
             return true;
         } else {
             return false;

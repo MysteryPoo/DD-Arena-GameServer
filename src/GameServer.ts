@@ -12,6 +12,9 @@ import { PingHandler } from "./Protocol/GameServerInterface/Handlers/Ping";
 import { ControllerHandler } from "./Protocol/GameServerInterface/Handlers/Controller";
 import { SyncPositionHandler } from "./Protocol/GameServerInterface/Handlers/SyncPosition";
 import { PlayerData } from "./Protocol/GameServerInterface/Messages/PlayerData";
+import { setInterval } from "timers";
+import { IGameState } from "./Interfaces/IGameState";
+import { GameStateWaiting } from "./GameState";
 
 export enum MESSAGE_ID {
     FIRST,
@@ -21,7 +24,7 @@ export enum MESSAGE_ID {
     PLAYERDATA,
     CONTROLLERDATA,
     SYNCPOSITION,
-	GAMEOVER,
+	GAMESTATE,
 	SETVOIP,
 	VOIPDATA,
     INVALID,
@@ -59,6 +62,9 @@ export class Player {
 
     public ownedBy : clientUID | undefined;
     public isAI : boolean = false;
+    public hitPoints : number = 100;
+    public networkX : number = 0;
+    public networkY : number = 0;
 
     constructor(public metaProperties : MetaProperties, public controllerKey : number) {}
 }
@@ -67,10 +73,14 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
 
     public playerMap : Map<number, Player> = new Map();
     public controllerMap : Map<number, ClientController> = new Map();
+    public gameState : IGameState = new GameStateWaiting(this);
+    public updateInterval : NodeJS.Timeout;
+
     private nextControllerId : number = 0;
     private nextPlayerId : number = 0;
     private hostId : clientUID = "";
-    private isGameRunning : boolean = false;
+    private isMatchmakingEnabled : boolean = Number(process.env.NOMATCHMAKING) === 0 ? true : false;
+    private numberOfPlayers : number = Number(process.env.PLAYERCOUNT);
 
     constructor(private lobbyConnMgr : LobbyConnectionManager) {
         super();
@@ -89,11 +99,15 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         });
 
         // Independent Server Mode
-        if (process.env.NOMATCHMAKING) {
-            for (let p = 0; p < 4; ++p) {
+        if (!this.isMatchmakingEnabled) {
+            for (let p = 0; p < this.numberOfPlayers; ++p) {
                 this.playerMap.set(p, new Player(new MetaProperties(`Player${p + 1}`, 1000 + p), this.newController()));
             }
         }
+
+        this.updateInterval = setInterval( () => {
+            this.gameState.update();
+        }, 1000);
     }
 
     private newController() : number {
@@ -118,7 +132,6 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
     }
 
     startGame() : void {
-        this.isGameRunning = true;
         
         for (let [key, player] of this.playerMap) {
             for (let client of this.socketMap.values()) {
@@ -149,10 +162,7 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         this.removeClient(client);
 
         if (this.socketMap.size === 0) {
-            console.debug("Shutting down... No users connected.");
-            this.lobbyConnMgr.destroy();
-            this.close();
-            this.unref();
+            this.shutdown("No users connected.");
         }
     }
 
@@ -189,21 +199,17 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         return new Promise<boolean>( (resolve, reject) => {
             this.port = port;
             this.listen( {port: port, host: "0.0.0.0"}, () => {
-                if (process.env.NOMATCHMAKING === "0") {
-                    setTimeout( () => {
-                        this.getConnections( (err, count : number) => {
-                            if (count === 0) {
-                                console.debug("Shutting down... No one has connected before the timeout.");
-                                this.close();
-                                this.unref();
-                                this.lobbyConnMgr.destroy();
-                            }
-                        });
-                    }, 5000);
-                }
                 resolve(true);
             });
         });
+    }
+
+    public shutdown(reason : string = "") : void {
+        console.debug(`Shutting down... ${reason}`);
+        clearInterval(this.updateInterval);
+        this.close();
+        this.unref();
+        this.lobbyConnMgr.destroy();
     }
 
 }
