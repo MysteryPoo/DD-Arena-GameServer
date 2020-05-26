@@ -36,7 +36,7 @@ export abstract class GameStateBase implements IGameState {
 export class GameStateWaiting extends GameStateBase {
 
     private timer : number = 10;
-    private expectedConnections : number = Number(process.env.EXPECTEDCONNECTIONS);
+    private playerCount : number = this.gameServer.getNumberOfPlayers();
 
     update(): void {
         let playerCount = 0;
@@ -46,7 +46,7 @@ export class GameStateWaiting extends GameStateBase {
             }
         }
 
-        if (playerCount >= this.expectedConnections) {
+        if (playerCount >= this.playerCount) {
             this.gameServer.gameState = new GameStateCountdown(this.gameServer);
         }
 

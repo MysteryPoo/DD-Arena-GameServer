@@ -118,6 +118,10 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         return controllerKey;
     }
 
+    getNumberOfPlayers() : number {
+        return this.numberOfPlayers;
+    }
+
     getAllSockets() : Map<string, IClient> {
         return this.socketMap;
     }
