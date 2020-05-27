@@ -79,7 +79,7 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
     private nextControllerId : number = 0;
     private nextPlayerId : number = 0;
     private hostId : clientUID = "";
-    private isMatchmakingEnabled : boolean = Number(process.env.NOMATCHMAKING) === 0 ? true : false;
+    readonly isMatchmakingEnabled : boolean = Number(process.env.NOMATCHMAKING) === 0 ? true : false;
     private numberOfPlayers : number = Number(process.env.PLAYERCOUNT);
 
     constructor(private lobbyConnMgr : LobbyConnectionManager) {
@@ -118,6 +118,20 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         return controllerKey;
     }
 
+    public newPlayer(uid : string, token : number) : number {
+        let metaData : MetaProperties = new MetaProperties(uid, token);
+        let player : Player = new Player(metaData, this.newController());
+        player.ownedBy = uid;
+        let playerKey : number = this.nextPlayerId++;
+        this.playerMap.set(playerKey, player);
+
+        return playerKey;
+    }
+
+    getLobbyConnectionManager() : LobbyConnectionManager {
+        return this.lobbyConnMgr;
+    }
+
     getNumberOfPlayers() : number {
         return this.numberOfPlayers;
     }
@@ -133,6 +147,13 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
 
     getControllerOfPlayer(player : Player) : ClientController | undefined {
         return this.controllerMap.get(player.controllerKey);
+    }
+
+    public authenticateClient(newId : string, client : IClient) : void {
+        this.socketMap.set(newId, client);
+        this.socketMap.delete(client.uid);
+        client.authenticated = true;
+        client.uid = newId;
     }
 
     startGame() : void {
@@ -211,6 +232,9 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
     public shutdown(reason : string = "") : void {
         console.debug(`Shutting down... ${reason}`);
         clearInterval(this.updateInterval);
+        for (let client of this.socketMap.values()) {
+            this.removeClient(client);
+        }
         this.close();
         this.unref();
         this.lobbyConnMgr.destroy();
