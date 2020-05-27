@@ -7,6 +7,7 @@ export class Handshake extends MessageBase {
     public gameVersion!: number;
     public gameServerPassword!: string;
     public playerIdList!: Array<string>;
+    public playerTokenList!: Array<number>;
 
     serialize(): Buffer {
         let gameServerPasswordLength : number = Buffer.byteLength(this.gameServerPassword, 'utf-8');
@@ -33,7 +34,27 @@ export class Handshake extends MessageBase {
     }
 
     deserialize(buffer: Buffer): void {
-        throw new Error("Method not implemented.");
+        try {
+            this.playerIdList = [];
+            this.playerTokenList = [];
+
+            let helper : BufferHelper = new BufferHelper(buffer);
+
+            let playerCount : number = helper.readUInt8();
+            for (let index = 0; index < playerCount; ++index) {
+                let idLength : number = helper.readUInt8();
+                let id : string = helper.readString(idLength);
+                this.playerIdList.push(id);
+            }
+            for (let index = 0; index < playerCount; ++index) {
+                let token : number = helper.readUInt16LE();
+                this.playerTokenList.push(token);
+            }
+
+            this.valid = true;
+        } catch (e) {
+            this.valid = false;
+        }
     }
 
 }

@@ -21,6 +21,7 @@ export class LobbyConnectionManager implements IConnectionManager {
 
     public handlerList : IMessageHandler[] = [];
     private lobbyInterface : LobbyClient | undefined;
+    readonly matchMakingProtocolVersion : number = 0;
 
     constructor() {
         this.reconnect();

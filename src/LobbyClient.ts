@@ -7,8 +7,12 @@ import { Ping } from "./Protocol/LobbyServerInterface/Messages/Ping";
 import { PingHandler } from "./Protocol/LobbyServerInterface/Handlers/Ping";
 import { IConnectionManager } from "./Interfaces/IConnectionManager";
 import { MESSAGE_ID } from "./LobbyConnectionManager";
+import { HandshakeHandler } from "./Protocol/LobbyServerInterface/Handlers/Handshake";
 
 export class LobbyClient extends ClientBase {
+
+    public playerIdList : Array<string> = [];
+    public playerTokenList : Array<number> = [];
 
     private pingTimer = setInterval( () => {
         let ping : Ping = new Ping(MESSAGE_ID.Ping);
@@ -33,6 +37,7 @@ export class LobbyClient extends ClientBase {
 
         this.registerHandler<ChallengeHandler>(MESSAGE_ID.Challenge, ChallengeHandler);
         this.registerHandler<PingHandler>(MESSAGE_ID.Ping, PingHandler);
+        this.registerHandler<HandshakeHandler>(MESSAGE_ID.Handshake, HandshakeHandler);
     }
 
     public destroy() : void {
@@ -52,5 +57,13 @@ export class LobbyClient extends ClientBase {
     // TODO : Probably need to refactor this into a class/interface "Network" since both clients and servers need this
     protected registerHandler<T extends IMessageHandler>(messageId : number, handler : {new(messageId : number) : T; }) {
         this.handlerList[messageId] = new handler(messageId);
+    }
+
+    public getPlayerIdList() : Array<string> {
+        return this.playerIdList;
+    }
+
+    public getPlayerTokenList() : Array<number> {
+        return this.playerTokenList;
     }
 }
