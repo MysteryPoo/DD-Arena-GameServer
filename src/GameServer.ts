@@ -208,6 +208,12 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
                 this.hostId = client.uid;
                 newHostId = client.uid;
                 console.debug(`New host id: ${newHostId}`);
+                // Update bots
+                for (let player of this.playerMap.values()) {
+                    if (player.isAI) {
+                        this.controllerMap.get(player.controllerKey)!.setClient(client);
+                    }
+                }
                 break;
             }
         }
