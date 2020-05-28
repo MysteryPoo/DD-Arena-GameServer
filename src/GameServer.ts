@@ -81,6 +81,7 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
     private hostId : clientUID = "";
     readonly isMatchmakingEnabled : boolean = Number(process.env.NOMATCHMAKING) === 0 ? true : false;
     private numberOfPlayers : number = Number(process.env.PLAYERCOUNT);
+    private numberOfBots : number = Number(process.env.BOTCOUNT);
 
     constructor(private lobbyConnMgr : LobbyConnectionManager) {
         super();
@@ -105,6 +106,10 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
             }
         }
 
+        for (let b = 0; b < this.numberOfBots; ++b) {
+            this.newPlayer(`Bot${b}`, 100 + b, true);
+        }
+
         this.updateInterval = setInterval( () => {
             this.gameState.update();
         }, 1000);
@@ -118,10 +123,11 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         return controllerKey;
     }
 
-    public newPlayer(uid : string, token : number) : number {
+    public newPlayer(uid : string, token : number, isBot : boolean = false) : number {
         let metaData : MetaProperties = new MetaProperties(uid, token);
         let player : Player = new Player(metaData, this.newController());
         player.ownedBy = uid;
+        player.isAI = isBot;
         let playerKey : number = this.nextPlayerId++;
         this.playerMap.set(playerKey, player);
 
@@ -134,6 +140,10 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
 
     getNumberOfPlayers() : number {
         return this.numberOfPlayers;
+    }
+
+    getNumberOfBots() : number {
+        return this.numberOfBots;
     }
 
     getAllSockets() : Map<string, IClient> {

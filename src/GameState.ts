@@ -46,7 +46,7 @@ export class GameStateWaiting extends GameStateBase {
             }
         }
 
-        if (playerCount >= this.playerCount) {
+        if (playerCount + this.gameServer.getNumberOfBots() >= this.playerCount) {
             this.gameServer.gameState = new GameStateCountdown(this.gameServer);
         }
 
