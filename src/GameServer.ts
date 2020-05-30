@@ -58,6 +58,16 @@ export class MetaProperties {
 
 type clientUID = string;
 
+let DwarfNameArray = [
+    "Happy",
+    "Sleepy",
+    "Sneezy",
+    "Grumpy",
+    "Bashful",
+    "Dopey",
+    "Doc"
+]
+
 export class Player {
 
     public ownedBy : clientUID | undefined;
@@ -107,7 +117,10 @@ export class GameServer extends ServerBase implements IServer, IConnectionManage
         }
 
         for (let b = 0; b < this.numberOfBots; ++b) {
-            this.newPlayer(`Bot${b}`, 100 + b, true);
+            let name : string;
+            if (b < DwarfNameArray.length) name = DwarfNameArray[b];
+            else name = `Bot${b}`;
+            this.newPlayer(`${name}`, 100 + b, true);
         }
 
         this.updateInterval = setInterval( () => {
