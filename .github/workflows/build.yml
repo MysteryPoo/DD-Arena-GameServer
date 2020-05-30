@@ -87,3 +87,16 @@ jobs:
         if: always() && startsWith(github.ref, 'refs/tags/v')
         run: |
           rm -f ${HOME}/.docker/config.json
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: docker pull victordavion/ddags
