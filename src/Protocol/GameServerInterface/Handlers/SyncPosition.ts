@@ -21,7 +21,10 @@ export class SyncPositionHandler extends MessageHandlerBase {
                     player.hitPoints = message.hitPoints;
                     // Repeat message to clients
                     for (let [id, client] of gameServer.getAllSockets()) {
-                        client.write(message.serialize());
+                        // Filter out host
+                        if (client.uid !== myClient.uid) {
+                            client.write(message.serialize());
+                        }
                     }
                 }
             }
