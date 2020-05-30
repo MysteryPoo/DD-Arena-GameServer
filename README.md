@@ -20,9 +20,11 @@ The Game Server listens on port 9000 by default or the PORT enviornment variable
 ## Environment Variables
 | Variable Name | Usage | Expected Values |
 | --- | --- | --- |
-| PORT | Local port to listen | A number 1-65535 |
+| PORT | Local port to listen (Useful when hosting outside of Docker) | A number 1-65535 |
 | AUTHIP | IP Address of the Matchmaking Server | An IP or hostname |
 | AUTHPORT | Port of the Matchmaking Server | A number 1-65535 |
+| HOST | The UID of the client marked as Host for their lobby |
 | PASSWORD | Secret string to authorize on the Matchmaking Server | A String |
 | PLAYERCOUNT | Number of players for this session | A number |
+| BOTCOUNT | Number of bots to introduce | A number |
 | NOMATCHMAKING | If matchmaking is enabled, the server will shutdown if no one is connected. | 0 or 1 |
